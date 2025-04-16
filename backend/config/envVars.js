@@ -1,9 +1,19 @@
+// backend/config/envVars.js
 import dotenv from "dotenv";
-dotenv.config();
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Get current dirname (because you're using ES modules)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from parent folder (backend/.env)
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
 export const ENV_VARS = {
-    MONGO_URI: process.env.MONGO_URI,
-    PORT: process.env.PORT || 5000,
-    JWT_SCERET : process.env.JWT_SCERET,
-    NODE_ENV : process.env.NODE_ENV,
-    TMDB_API_KEY :process.env.TMDB_API_KEY
-}
+  PORT: process.env.PORT || 5000,
+  MONGO_URI: process.env.MONGO_URI,
+  NODE_ENV: process.env.NODE_ENV || "development",
+  JWT_SECRET: process.env.JWT_SECRET || "my_really_hard_to_decode_sceret",
+  TMDB_API_KEY: process.env.TMDB_API_KEY,
+};

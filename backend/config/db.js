@@ -1,16 +1,16 @@
+// backend/config/db.js
 import mongoose from "mongoose";
-import {ENV_VARS} from "./envVars.js";
+import { ENV_VARS } from "./envVars.js"; // ✅ SAME folder, so use "./"
 
-export const connectionDb = async ()=>{
-
-    try{
-        const conn = await mongoose.connect(ENV_VARS.MONGO_URI);
-        console.log("Mongodb is connected "+conn.connection.host);
-    }catch(error){
-        console.log("Error connectiong in MONGO_URI : "+error.message);
-        process.exit(1); //1 means connection was a error , 0 means connection is successful
-
-        }
-    
-
-}
+export const connectionDb = async () => {
+  try {
+    if (!ENV_VARS.MONGO_URI) {
+      throw new Error("MONGO_URI is not defined");
+    }
+    await mongoose.connect(ENV_VARS.MONGO_URI); // No need to pass deprecated options
+    console.log("MongoDB connected successfully");
+  } catch (error) {
+    console.error("Error connecting to MongoDB:", error.message);
+    process.exit(1);
+  }
+};

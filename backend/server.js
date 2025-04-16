@@ -12,9 +12,6 @@ import path from "path";
 const app = express();
 const PORT = ENV_VARS.PORT;
 const __dirname = path.resolve();
-
-
-
 app.use(express.json()); // it is middleware it used to allow the parse req.body
 app.use(cookieParser())
 app.use("/api/v1/auth", authRoutes);

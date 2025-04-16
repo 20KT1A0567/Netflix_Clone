@@ -1,113 +1,117 @@
-import user from "../models/user.model.js";
+import { User } from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
-import { generateTokensetCookie } from "../utils/generatetoken.js";
+import { generateTokenAndSetCookie } from "../utils/generateToken.js";
+
 export async function signup(req, res) {
-    try {
-        
-        const { username, password, email } = req.body;
-        
-        if (!password || !email || !username) {
-            return res.status(400).json({ success: false, message: "All fields are required" });
-        }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex) {
-            return res.status(400).json({ success: false, message: "Invalid email" })
-        }
+	try {
+		const { email, password, username } = req.body;
 
-        if (password.length < 6) {
-            return res.status(400).json({ success: false, message: "password must contain 6 characters" })
-        }
+		if (!email || !password || !username) {
+			return res.status(400).json({ success: false, message: "All fields are required" });
+		}
 
-        const existingUserbyemail = await user.findOne({ email: email })
-        if (existingUserbyemail) {
-            return res.status(400).json({ success: false, message: "email already exists" })
-        }
-        const existingUserbyusername = await user.findOne({ username: username })
-        if (existingUserbyusername) {
-            return res.status(400).json({ success: false, message: "username already exists" })
-        }
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        const salt = await bcryptjs.genSalt(10);
-        const hashedpassword = await bcryptjs.hash(password,salt);
+		if (!emailRegex.test(email)) {
+			return res.status(400).json({ success: false, message: "Invalid email" });
+		}
 
-        const PROFILE_PICS = ["avatar1.png", "avatar2.png", "avatar3.png"];
-        const image = PROFILE_PICS[Math.floor(Math.random() * PROFILE_PICS.length)];
+		if (password.length < 6) {
+			return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+		}
 
-        const newuser = new user({
-            email: email,
-            password: hashedpassword,
-            username: username,
-            image: image
-        });
-            generateTokensetCookie(newuser._id,res);
-            await newuser.save();
-            res.status(200).json({
-                success:true,
-                message:"account created successfully",
-                                user:{
-                    ...newuser._doc,
-                    password : "",
-                },
-            });
+		const existingUserByEmail = await User.findOne({ email: email });
 
-        // res.status(201).json({"message":"succesfully created user"})
-    }
-    catch (error) {
-        console.log("Error in signup control : " + error.message);
-        res.status(500).json({ success: false, message: "Internal server error" })
-    }
+		if (existingUserByEmail) {
+			return res.status(400).json({ success: false, message: "Email already exists" });
+		}
+
+		const existingUserByUsername = await User.findOne({ username: username });
+
+		if (existingUserByUsername) {
+			return res.status(400).json({ success: false, message: "Username already exists" });
+		}
+
+		const salt = await bcryptjs.genSalt(10);
+		const hashedPassword = await bcryptjs.hash(password, salt);
+
+		const PROFILE_PICS = ["/avatar1.png", "/avatar2.png", "/avatar3.png"];
+
+		const image = PROFILE_PICS[Math.floor(Math.random() * PROFILE_PICS.length)];
+
+		const newUser = new User({
+			email,
+			password: hashedPassword,
+			username,
+			image,
+		});
+
+		generateTokenAndSetCookie(newUser._id, res);
+		await newUser.save();
+
+		res.status(201).json({
+			success: true,
+			user: {
+				...newUser._doc,
+				password: "",
+			},
+		});
+	} catch (error) {
+		console.log("Error in signup controller", error.message);
+		res.status(500).json({ success: false, message: "Internal server error" });
+	}
 }
 
-
 export async function login(req, res) {
-    try {
-        const {email,password} = req.body;
-        if(!email || !password){
-          return  res.status(400).json({success:false,message:"All fields are required"});
-        }
-        const user1  = await user.findOne({email : email});
-        
-        if(!user1){
-            return res.status(400).json({success:false,message:"Invalid credials"});
-        }
-        const isPasswordCorrect = await bcryptjs.compare(password,user1.password);
-        if(!isPasswordCorrect){
-           return res.status(400).json({success:false,message:"Invalid credials"});
-        }
-        generateTokensetCookie(user1._id,res);
-        
-        res.status(200).json({
-            success:true,
-            user:{
-                ...user1._doc,
-                password : "",
-            },
-        });
-        
-    } catch (error) {
-        console.log("Error in login control : " + error.message);
-         return res.status(500).json({ success: false, message: "Internal server error" })
-        
-    }
+	try {
+		const { email, password } = req.body;
+
+		if (!email || !password) {
+			return res.status(400).json({ success: false, message: "All fields are required" });
+		}
+
+		const user = await User.findOne({ email: email });
+		if (!user) {
+			return res.status(404).json({ success: false, message: "Invalid credentials" });
+		}
+
+		const isPasswordCorrect = await bcryptjs.compare(password, user.password);
+
+		if (!isPasswordCorrect) {
+			return res.status(400).json({ success: false, message: "Invalid credentials" });
+		}
+
+		generateTokenAndSetCookie(user._id, res);
+
+		res.status(200).json({
+			success: true,
+			user: {
+				...user._doc,
+				password: "",
+			},
+		});
+	} catch (error) {
+		console.log("Error in login controller", error.message);
+		res.status(500).json({ success: false, message: "Internal server error" });
+	}
 }
 
 export async function logout(req, res) {
-    try {
-        
-       res.clearCookie("jwt-netflix"); 
-       return res.status(200).json({success:true,message:"Logedout successfully"});
-    } catch (error) {
-        console.log("Error in logedout controller " ,error.message);
-        return res.status(500).json({success:false,message:"Internal server error"});
-    }
+	try {
+		res.clearCookie("jwt-netflix");
+		res.status(200).json({ success: true, message: "Logged out successfully" });
+	} catch (error) {
+		console.log("Error in logout controller", error.message);
+		res.status(500).json({ success: false, message: "Internal server error" });
+	}
 }
 
-
-export async function authCheck(req,res) {
-    try {
-        res.status(200).json({success:true,user:req.user})
-    } catch (error) {
-        console.log("Error in auth check controller ",error.message);
-        res.status(500).json({success:false,message:"Internal server error"});
-    }
+export async function authCheck(req, res) {
+	try {
+		console.log("req.user:", req.user);
+		res.status(200).json({ success: true, user: req.user });
+	} catch (error) {
+		console.log("Error in authCheck controller", error.message);
+		res.status(500).json({ success: false, message: "Internal server error" });
+	}
 }
