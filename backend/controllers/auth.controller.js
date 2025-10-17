@@ -1,6 +1,6 @@
 import { User } from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
-import { generateTokenAndSetCookie } from "../utils/generatetoken.js";
+import { generateTokenAndSetCookie } from "../utils/generateToken.js";
 
 
 
